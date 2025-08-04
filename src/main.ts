@@ -26,8 +26,7 @@ function parseCommandLineArgs(): ReturnType<typeof yargs.parseSync> {
     })
     .option('mcp-mode', {
       alias: 'c',
-      description:
-        'MCP connection mode: standalone (direct WhatsApp client) or api (connect to WhatsApp API)',
+      description: 'MCP connection mode: standalone (direct WhatsApp client) or api (connect to WhatsApp API)',
       type: 'string',
       choices: ['standalone', 'api'],
       default: 'standalone',
@@ -94,7 +93,6 @@ function parseCommandLineArgs(): ReturnType<typeof yargs.parseSync> {
 function configureLogger(argv: ReturnType<typeof parseCommandLineArgs>): void {
   logger.level = argv['log-level'] as string;
 
-  // Configure logger to use stderr for all levels when in MCP command mode
   if (argv.mode === 'mcp' && argv.transport === 'command') {
     configureForCommandMode();
   }
@@ -109,6 +107,9 @@ function createConfigurations(argv: ReturnType<typeof parseCommandLineArgs>): {
     authStrategy: argv['auth-strategy'] as 'local' | 'none',
     dockerContainer: isDockerContainer,
     mediaStoragePath: argv['media-storage-path'] as string | undefined,
+
+    // ✅ HEROKU CHROMIUM FIX
+    browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
   };
 
   const mcpConfig: McpConfig = {
@@ -208,7 +209,6 @@ async function startWhatsAppApiServer(whatsAppConfig: WhatsAppConfig, port: numb
     logger.info(`WhatsApp Web Client API started successfully on port ${port}`);
   });
 
-  // Keep the process running
   process.on('SIGINT', async () => {
     logger.info('Shutting down WhatsApp Web Client API...');
     await client.destroy();
